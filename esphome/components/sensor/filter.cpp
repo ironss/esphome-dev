@@ -47,10 +47,12 @@ optional<float> SlidingWindowFilter::new_value(float value) {
   } else {
     // Buffer full - overwrite oldest value (ring buffer)
     this->window_[this->window_head_] = value;
-    this->window_head_++;
-    if (this->window_head_ >= this->window_size_) {
-      this->window_head_ = 0;
-    }
+  }
+
+  // Update head pointer
+  this->window_head_++;
+  if (this->window_head_ >= this->window_size_) {
+    this->window_head_ = 0;
   }
 
   // Check if we should send a result
@@ -136,6 +138,34 @@ float MinFilter::compute_result() { return this->find_extremum_<std::less<float>
 
 // MaxFilter
 float MaxFilter::compute_result() { return this->find_extremum_<std::greater<float>>(); }
+
+// SlidingWindowDeltaFilter
+float SlidingWindowDeltaFilter::compute_result() {
+  ESP_LOGI(TAG, "SlidingWindowDeltaFilter(%p)::compute_result(): %zu, %zu", this, this->window_head_,
+           this->window_count_);
+  if (this->window_count_ == 0)
+    return NAN;
+
+  if (this->window_count_ == 1)
+    return 0;
+
+  ptrdiff_t newest_ix = this->window_head_ - 1;
+  if (newest_ix < 0) {
+    newest_ix += this->window_size_;
+  }
+  float newest_value = this->window_[newest_ix];
+
+  ptrdiff_t oldest_ix = newest_ix - (this->window_count_ - 1);
+  if (oldest_ix < 0) {
+    oldest_ix += this->window_size_;
+  }
+  float oldest_value = this->window_[oldest_ix];
+
+  float delta = newest_value - oldest_value;
+  ESP_LOGI(TAG, "SlidingWIndowDeltaFilter(%p)::compute_result(): %td, %td: %f - %f -> %f", this, newest_ix, oldest_ix,
+           newest_value, oldest_value, delta);
+  return delta;
+}
 
 // SlidingWindowMovingAverageFilter
 float SlidingWindowMovingAverageFilter::compute_result() {

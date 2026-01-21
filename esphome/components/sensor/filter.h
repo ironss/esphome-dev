@@ -209,6 +209,28 @@ class MaxFilter : public MinMaxFilter {
   float compute_result() override;
 };
 
+/** Sliding window delta filter.
+ *
+ * Takes takes difference between the first and the last values of the window.
+ * With a 'heartbeat' filter in front of it, it returns a stream of changes for the total delay period
+ * (heartbeat period * window size)
+ */
+class SlidingWindowDeltaFilter : public SlidingWindowFilter {
+ public:
+  /** Construct a SlidingWindowDeltaFilter.
+   *
+   * @param window_size The number of values that should be averaged.
+   * @param send_every After how many sensor values should a new one be pushed out.
+   * @param send_first_at After how many values to forward the very first value. Defaults to the first value
+   *   on startup being published on the first *raw* value, so with no filter applied. Must be less than or equal to
+   *   send_every.
+   */
+  using SlidingWindowFilter::SlidingWindowFilter;
+
+ protected:
+  float compute_result() override;
+};
+
 /** Simple sliding window moving average filter.
  *
  * Essentially just takes takes the average of the last window_size values and pushes them out

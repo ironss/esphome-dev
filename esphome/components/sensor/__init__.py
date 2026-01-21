@@ -251,6 +251,7 @@ MedianFilter = sensor_ns.class_("MedianFilter", Filter)
 SkipInitialFilter = sensor_ns.class_("SkipInitialFilter", Filter)
 MinFilter = sensor_ns.class_("MinFilter", Filter)
 MaxFilter = sensor_ns.class_("MaxFilter", Filter)
+SlidingWindowDeltaFilter = sensor_ns.class_("SlidingWindowDeltaFilter", Filter)
 SlidingWindowMovingAverageFilter = sensor_ns.class_(
     "SlidingWindowMovingAverageFilter", Filter
 )
@@ -555,6 +556,32 @@ async def exponential_moving_average_filter_to_code(config, filter_id):
         config[CONF_SEND_EVERY],
         config[CONF_SEND_FIRST_AT],
     )
+
+
+SLIDING_DELTA_SCHEMA = cv.All(
+    cv.Schema(
+        {
+            cv.Optional(CONF_WINDOW_SIZE, default=12): cv.positive_not_null_int,
+            cv.Optional(CONF_SEND_EVERY, default=1): cv.positive_not_null_int,
+            cv.Optional(CONF_SEND_FIRST_AT, default=1): cv.positive_not_null_int,
+        }
+    ),
+    validate_send_first_at,
+)
+
+
+@FILTER_REGISTRY.register(
+    "delay_delta",
+    Filter,
+    SLIDING_DELTA_SCHEMA,
+)
+async def delay_delta_filter_to_code(config, filter_id):
+    window_size: int = config[CONF_WINDOW_SIZE]
+    send_every: int = config[CONF_SEND_EVERY]
+    send_first_at: int = config[CONF_SEND_FIRST_AT]
+
+    rhs = SlidingWindowDeltaFilter.new(window_size, send_every, send_first_at)
+    return cg.Pvariable(filter_id, rhs, SlidingWindowDeltaFilter)
 
 
 @FILTER_REGISTRY.register(
