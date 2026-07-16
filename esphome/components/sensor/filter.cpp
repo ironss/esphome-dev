@@ -130,29 +130,23 @@ float MaxFilter::compute_result() { return this->find_extremum_<std::greater<flo
 
 // SlidingWindowDeltaFilter
 float SlidingWindowDeltaFilter::compute_result() {
-  ESP_LOGI(TAG, "SlidingWindowDeltaFilter(%p)::compute_result(): %zu, %zu", this, this->window_head_,
-           this->window_count_);
-  if (this->window_count_ == 0)
+  // ESP_LOGI(TAG, "SlidingWindowDeltaFilter(%p)::compute_result(): %zu, %zu", this, this->window_head_,
+  //          this->window_count_);
+
+  if (this->window_.empty())
     return NAN;
 
-  if (this->window_count_ == 1)
+  if (this->window_.size() == 1)
     return 0;
 
-  ptrdiff_t newest_ix = this->window_head_ - 1;
-  if (newest_ix < 0) {
-    newest_ix += this->window_size_;
+  const float oldest_value = this->window_.front();
+  float newest_value = oldest_value;
+  for (float value : this->window_) {
+    newest_value = value;
   }
-  float newest_value = this->window_[newest_ix];
-
-  ptrdiff_t oldest_ix = newest_ix - (this->window_count_ - 1);
-  if (oldest_ix < 0) {
-    oldest_ix += this->window_size_;
-  }
-  float oldest_value = this->window_[oldest_ix];
 
   float delta = newest_value - oldest_value;
-  ESP_LOGI(TAG, "SlidingWIndowDeltaFilter(%p)::compute_result(): %td, %td: %f - %f -> %f", this, newest_ix, oldest_ix,
-           newest_value, oldest_value, delta);
+  // ESP_LOGI(TAG, "SlidingWindowDeltaFilter(%p)::compute_result(): %f - %f -> %f", this, newest_value, oldest_value, delta);
   return delta;
 }
 
